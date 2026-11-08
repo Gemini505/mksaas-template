@@ -1,0 +1,113 @@
+import { getSchemaUrl } from '@/lib/structured-data';
+import { JsonLd } from '@/components/seo/json-ld';
+import { websiteConfig } from '@/config/website';
+import { getBaseUrl, getImageUrl } from '@/lib/urls';
+import CallToActionSection from '@/components/blocks/calltoaction/calltoaction';
+import FaqSection from '@/components/blocks/faqs/faqs';
+import FeaturesSection from '@/components/blocks/features/features';
+import Features2Section from '@/components/blocks/features/features2';
+import HeroSection from '@/components/blocks/hero/hero';
+import IntegrationSection from '@/components/blocks/integration/integration';
+import Integration2Section from '@/components/blocks/integration/integration2';
+import LogoCloud from '@/components/blocks/logo-cloud/logo-cloud';
+import PricingSection from '@/components/blocks/pricing/pricing';
+import StatsSection from '@/components/blocks/stats/stats';
+import TestimonialsSection from '@/components/blocks/testimonials/testimonials';
+import CrispChat from '@/components/chatbox/crisp-chat';
+import { NewsletterCard } from '@/components/newsletter/newsletter-card';
+import { constructMetadata } from '@/lib/metadata';
+import type { Metadata } from 'next';
+import type { Locale } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
+import { routing } from '@/i18n/routing';
+
+export function generateStaticParams() {
+  return routing.locales.map((locale) => ({ locale }));
+}
+
+/**
+ * https://next-intl.dev/docs/environments/actions-metadata-route-handlers#metadata-api
+ */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: Locale }>;
+}): Promise<Metadata | undefined> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'Metadata' });
+
+  return constructMetadata({
+    title: t('title'),
+    description: t('description'),
+    locale,
+    pathname: '',
+  });
+}
+
+interface HomePageProps {
+  params: Promise<{ locale: Locale }>;
+}
+
+export default async function HomePage({ params }: HomePageProps) {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'Metadata' });
+  const organizationId = `${getBaseUrl().replace(/\/$/, '')}/#organization`;
+  return (
+    <>
+      <JsonLd
+        data={{
+          '@context': 'https://schema.org',
+          '@graph': [
+            {
+              '@type': 'Organization',
+              '@id': organizationId,
+              name: t('name'),
+              url: getBaseUrl(),
+              logo: websiteConfig.metadata.images?.logoLight
+                ? getImageUrl(websiteConfig.metadata.images.logoLight)
+                : undefined,
+              sameAs: Object.values(websiteConfig.metadata.social ?? {}).filter(
+                Boolean
+              ),
+            },
+            {
+              '@type': 'WebSite',
+              url: getSchemaUrl('', locale),
+              name: t('name'),
+              inLanguage:
+                websiteConfig.i18n.locales[locale]?.hreflang ?? locale,
+              publisher: { '@id': organizationId },
+            },
+          ],
+        }}
+      />
+      <div className="flex flex-col">
+        <HeroSection />
+
+        <LogoCloud />
+
+        <FeaturesSection />
+
+        <Features2Section />
+
+        <CallToActionSection />
+
+        <StatsSection />
+
+        <IntegrationSection />
+
+        <Integration2Section />
+
+        <PricingSection />
+
+        <FaqSection />
+
+        <TestimonialsSection />
+
+        <NewsletterCard />
+
+        <CrispChat />
+      </div>
+    </>
+  );
+}
